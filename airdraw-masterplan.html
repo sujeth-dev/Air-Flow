@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AirDraw — Master Technical & Build Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Hanken+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0d10;--panel:#131519;--panel2:#171a1f;--code:#0f1014;
+    --line:#262a31;--ink:#e9ece8;--muted:#8b9199;--faint:#5b626b;
+    --acid:#c8f24e;--acid-dim:#9bc23a;--cyan:#5fd4d6;--warn:#f2a93b;--radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',sans-serif;line-height:1.58;-webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(circle at 12% -8%,rgba(200,242,78,.06),transparent 36%),radial-gradient(circle at 92% 2%,rgba(95,212,214,.05),transparent 32%),linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);
+    background-size:auto,auto,34px 34px,34px 34px;}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 26px}
+  .mono{font-family:'JetBrains Mono',monospace;letter-spacing:.03em}
+
+  /* nav */
+  nav{position:sticky;top:0;z-index:50;background:rgba(12,13,16,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:6px;height:54px;overflow-x:auto;white-space:nowrap}
+  nav .brand{font-family:'Bricolage Grotesque';font-weight:800;color:var(--acid);margin-right:14px;font-size:16px}
+  nav a{color:var(--muted);text-decoration:none;font-family:'JetBrains Mono';font-size:12px;padding:6px 10px;border-radius:7px}
+  nav a:hover{color:var(--ink);background:var(--panel)}
+
+  header{padding:72px 0 24px}
+  .kicker{font-family:'JetBrains Mono';font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--acid);margin-bottom:18px;display:flex;align-items:center;gap:12px}
+  .kicker::before{content:"";width:30px;height:1px;background:var(--acid)}
+  h1{font-family:'Bricolage Grotesque';font-weight:800;font-size:clamp(40px,7.5vw,78px);line-height:.95;letter-spacing:-.03em}
+  h1 em{font-style:normal;color:var(--acid)}
+  .lede{max-width:660px;margin-top:22px;font-size:18px;color:var(--muted)}
+  .lede b{color:var(--ink)}
+
+  section.sec{padding:50px 0 6px;border-top:1px solid var(--line);margin-top:38px}
+  .sec-id{font-family:'JetBrains Mono';font-size:12px;color:var(--faint);letter-spacing:.16em}
+  h2{font-family:'Bricolage Grotesque';font-weight:800;font-size:clamp(28px,4.2vw,42px);letter-spacing:-.02em;margin:6px 0 18px}
+  h2 .c{color:var(--cyan)} h2 .a{color:var(--acid)} h2 .w{color:var(--warn)}
+  h3{font-family:'Bricolage Grotesque';font-weight:600;font-size:21px;margin:30px 0 10px;letter-spacing:-.01em}
+  h4{font-family:'JetBrains Mono';font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+  h4::before{content:"";width:6px;height:6px;background:var(--acid);border-radius:1px;transform:rotate(45deg)}
+  p{color:#cfd4cf;margin-bottom:12px;font-size:15px}
+  p.muted{color:var(--muted)}
+  ul{list-style:none;margin-bottom:12px}
+  li{padding-left:18px;position:relative;margin-bottom:8px;color:#cfd4cf;font-size:15px}
+  li::before{content:"›";position:absolute;left:0;color:var(--acid-dim);font-family:'JetBrains Mono'}
+  b,strong{color:#fff;font-weight:700}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px 26px;margin:14px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+
+  pre{background:var(--code);border:1px solid var(--line);border-radius:10px;padding:16px 18px;overflow-x:auto;margin:10px 0 14px;
+    font-family:'JetBrains Mono';font-size:12.5px;line-height:1.7;color:#c4d3a6;white-space:pre}
+  pre .c{color:var(--faint)} pre .k{color:var(--cyan)} pre .a{color:var(--acid)}
+
+  table{width:100%;border-collapse:collapse;margin:10px 0 16px;font-size:13.5px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:'JetBrains Mono';font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  td .mono{color:var(--acid-dim)}
+  tr:last-child td{border-bottom:none}
+
+  .flow{display:flex;gap:8px;align-items:stretch;overflow-x:auto;padding:6px 0 14px}
+  .flow .box{flex:0 0 auto;min-width:118px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px 12px}
+  .flow .box .t{font-family:'JetBrains Mono';font-size:10px;color:var(--faint);letter-spacing:.08em}
+  .flow .box .n{font-size:13px;color:var(--ink);font-weight:600;margin-top:3px}
+  .flow .arr{flex:0 0 auto;align-self:center;color:var(--acid-dim);font-family:'JetBrains Mono';font-size:18px}
+
+  .ms{display:flex;gap:13px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .ms:last-child{border-bottom:none}
+  .ms .box{flex:0 0 18px;width:18px;height:18px;border:1.5px solid var(--acid-dim);border-radius:5px;margin-top:3px}
+  .stage2 .ms .box{border-color:var(--cyan)}
+  .ms .body{flex:1}
+  .ms .id{font-family:'JetBrains Mono';font-size:11px;color:var(--acid);letter-spacing:.1em}
+  .stage2 .ms .id{color:var(--cyan)}
+  .ms .ti{font-weight:700;color:#fff;margin:2px 0 4px}
+  .ms .tasks{font-size:13.5px;color:#cfd4cf}
+  .ms .dod{font-family:'JetBrains Mono';font-size:12px;color:var(--acid-dim);margin-top:6px;display:block}
+  .stage2 .ms .dod{color:var(--cyan)}
+
+  .pill{display:inline-block;font-family:'JetBrains Mono';font-size:11px;color:var(--ink);background:var(--panel2);border:1px solid var(--line);padding:4px 9px;border-radius:6px;margin:3px 4px 3px 0}
+  .tag-a{border-color:var(--acid-dim);color:var(--acid)}
+  .tag-c{border-color:var(--cyan);color:var(--cyan)}
+
+  .stagebanner{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:4px}
+  .stagebanner .tg{font-family:'JetBrains Mono';font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--bg);background:var(--acid);padding:4px 9px;border-radius:6px;font-weight:600}
+  .s2banner .tg{background:var(--cyan)}
+  .stagebanner .lv{font-family:'JetBrains Mono';font-size:12px;color:var(--muted);border:1px solid var(--line);padding:4px 9px;border-radius:6px}
+
+  .callout{border-left:3px solid var(--warn);background:#15130e;border-radius:0 10px 10px 0;padding:13px 16px;margin:14px 0;font-size:14px;color:#e4dccb}
+  .callout b{color:var(--warn)}
+  footer{padding:50px 0 90px;border-top:1px solid var(--line);margin-top:40px;color:var(--faint);font-size:13px}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <span class="brand">AirDraw</span>
+  <a href="#product">Product</a>
+  <a href="#master">Master Plan</a>
+  <a href="#stage1">Stage 1</a>
+  <a href="#stage2">Stage 2</a>
+  <a href="#design">Design System</a>
+  <a href="#stream">Streaming</a>
+  <a href="#run">Run It</a>
+</div></nav>
+
+<header><div class="wrap">
+  <div class="kicker">Master Technical &amp; Build Plan</div>
+  <h1>Air<em>Draw</em><br>Build-Ready.</h1>
+  <p class="lede">A complete, execute-in-order plan for a touchless tool where you <b>draw a shape in mid-air and it snaps to a clean visual</b>. Every milestone has explicit done-criteria, so finishing the list finishes the stage — by hand or with a coding agent. Stage 1 ships a real product on its own; Stage 2 turns it into a full-stack app.</p>
+</div></header>
+
+<!-- ===================== PRODUCT ===================== -->
+<section class="sec" id="product"><div class="wrap">
+  <div class="sec-id">01 / REAL-WORLD PRODUCT</div>
+  <h2>The problem it <span class="a">actually</span> solves</h2>
+
+  <p>Every explanation of a spatial or structural thing — a cell, a circuit, a mechanism, a floor plan — hits the same wall: the explainer understands it, the audience has to <b>imagine</b> it. Slides and whiteboards are static and prepared in advance, so they break the moment someone asks "what if it looked like this instead?" AirDraw closes that gap live, and does it <b>touchlessly</b> — which unlocks contexts a mouse or touchscreen can't.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>Who it's for</h4>
+      <ul>
+        <li><b>Presenters &amp; teachers</b> at a board or on a stage who can't reach a keyboard mid-flow.</li>
+        <li><b>Hands-busy / hygiene-sensitive spaces</b> — labs, workshops, clinical-adjacent demos, public kiosks and museum exhibits where no one wants to touch a shared screen.</li>
+        <li><b>Accessibility</b> — an alternative input for users who can't use a precise mouse or stylus.</li>
+        <li><b>(Stage 2+) Technical sales / product demos</b> — conjure and rotate a model in front of a prospect without breaking eye contact.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Why it's useful &amp; easy</h4>
+      <ul>
+        <li><b>Zero install for the audience</b> — it runs in a browser; only a webcam is needed.</li>
+        <li><b>Learnable in seconds</b> — pinch to draw, release to snap. No drawing skill required: presets fix your messy stroke.</li>
+        <li><b>Explanation → shared visual instantly</b>, instead of "picture this in your head."</li>
+        <li><b>Works where touch doesn't</b> — across a room, on a stage, or on a screen no one should touch.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h4>Productization path (so it's a real product, not a toy)</h4>
+  <table>
+    <tr><th>Phase</th><th>Product shape</th><th>Who pays / why</th></tr>
+    <tr><td class="mono">Stage 1</td><td>Free public web demo — the "wow," a portfolio piece and lead magnet.</td><td>No one yet — it earns attention and validates the interaction.</td></tr>
+    <tr><td class="mono">Stage 2</td><td>Accounts + saved scenes + a real object library = a usable SaaS for educators &amp; presenters.</td><td>Individual educators / presenters on a light subscription.</td></tr>
+    <tr><td class="mono">Stage 3</td><td>Shared rooms → live remote teaching &amp; the sales-demo wedge.</td><td>Teams &amp; sales orgs with a measurable ROI (engagement, win-rate).</td></tr>
+  </table>
+  <p class="muted">The strategic endgame (strongest commercial pull) is touchless technical-sales demos, but Stages 1–2 are valuable on their own and must stand alone.</p>
+</div></section>
+
+<!-- ===================== MASTER PLAN ===================== -->
+<section class="sec" id="master"><div class="wrap">
+  <div class="sec-id">02 / MASTER PLAN</div>
+  <h2>How the build is sequenced</h2>
+  <p>Three stages, each independently shippable and deployable. This document fully specs Stages 1 &amp; 2; Stage 3 is summarized for context. Each stage is a set of milestones (M0…M6) with a hard <span class="mono">done-criterion</span> — a milestone isn't finished until its criterion is observably true.</p>
+
+  <table>
+    <tr><th>Stage</th><th>Outcome</th><th>New capabilities</th><th>Est.</th></tr>
+    <tr><td class="mono">01</td><td>Air-drawing → clean preset, client-side</td><td>Real-time CV, smoothing, gesture FSM, $1 recognition</td><td>2–3 wk</td></tr>
+    <tr><td class="mono">02</td><td>Sketch → 3D model, manipulate, save</td><td>TF.js CNN, Three.js, API, Postgres, auth</td><td>4–6 wk</td></tr>
+    <tr><td class="mono">03</td><td>Shared multiplayer scene</td><td>CRDT/WebSocket sync, presence, scaling</td><td>4–6 wk</td></tr>
+  </table>
+
+  <div class="callout"><b>Rule of the doc:</b> keep the CV + state modules decoupled from rendering and storage from day one (Stage 1). Stages 2–3 then bolt on without rewrites.</div>
+</div></section>
+
+<!-- ===================== STAGE 1 ===================== -->
+<section class="sec" id="stage1"><div class="wrap">
+  <div class="sec-id">03 / STAGE 1 — COMPLETE BUILD PLAN</div>
+  <div class="stagebanner"><span class="tg">Stage 01 · MVP</span><span class="lv">client-side only · ~2–3 weeks</span></div>
+  <h2>Air-Drawing Recognition <span class="a">Engine</span></h2>
+  <p>Single user, fully in the browser. Pinch to put the pen down, draw in the air, release to snap the stroke into a clean preset shape.</p>
+
+  <h4>Architecture — data flow</h4>
+  <div class="flow">
+    <div class="box"><div class="t">INPUT</div><div class="n">Webcam</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">CV</div><div class="n">HandLandmarker</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">FILTER</div><div class="n">One-Euro</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">LOGIC</div><div class="n">Gesture FSM</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">BUFFER</div><div class="n">Stroke pts</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">CLASSIFY</div><div class="n">$1 Recognizer</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">RENDER</div><div class="n">Morph → Preset</div></div>
+  </div>
+
+  <h4>Tech stack</h4>
+  <table>
+    <tr><th>Layer</th><th>Choice</th><th>Why</th></tr>
+    <tr><td>Language</td><td class="mono">TypeScript</td><td>Types keep the CV/FSM math honest.</td></tr>
+    <tr><td>Build / framework</td><td class="mono">Vite + React</td><td>Fast dev server; React for HUD/state.</td></tr>
+    <tr><td>Hand tracking</td><td class="mono">@mediapipe/tasks-vision</td><td>21 landmarks, in-browser, ~30 FPS, no backend.</td></tr>
+    <tr><td>Recognition</td><td class="mono">$1 Unistroke (≈120 LOC)</td><td>No training, instant, perfect for geometric presets.</td></tr>
+    <tr><td>Render</td><td class="mono">HTML5 Canvas 2D</td><td>Trail + morph animation, cheap.</td></tr>
+    <tr><td>Styling</td><td class="mono">CSS variables (design tokens)</td><td>Single source of truth for the look.</td></tr>
+    <tr><td>Hosting</td><td class="mono">Vercel / GitHub Pages</td><td>Static, free, HTTPS (required for camera).</td></tr>
+    <tr><td>DB</td><td class="mono">None</td><td>Everything client-side.</td></tr>
+  </table>
+
+  <h4>Project structure</h4>
+<pre><span class="c">airdraw/</span>
+├─ index.html
+├─ src/
+│  ├─ main.tsx              <span class="c"># React root</span>
+│  ├─ App.tsx              <span class="c"># layout + wires hook→UI</span>
+│  ├─ hooks/
+│  │  └─ useHandTracking.ts <span class="c"># camera + MediaPipe loop, emits fingertip+pinch</span>
+│  ├─ lib/
+│  │  ├─ oneEuroFilter.ts   <span class="c"># jitter smoothing</span>
+│  │  ├─ gestureFSM.ts      <span class="c"># IDLE→ARMED→DRAWING→RECOGNIZING</span>
+│  │  ├─ strokeUtils.ts     <span class="c"># resample / scale / rotate / translate</span>
+│  │  └─ dollarRecognizer.ts<span class="c"># $1 classify(stroke, templates)</span>
+│  ├─ data/
+│  │  ├─ templates.ts       <span class="c"># example strokes per shape</span>
+│  │  └─ presets.ts         <span class="c"># clean shape draw definitions</span>
+│  ├─ components/
+│  │  ├─ CanvasStage.tsx    <span class="c"># video + trail + result layers</span>
+│  │  ├─ ShapeRenderer.tsx  <span class="c"># morph raw→clean</span>
+│  │  ├─ Hud.tsx            <span class="c"># FPS, tracking, FSM state</span>
+│  │  └─ HistoryRail.tsx
+│  └─ styles/tokens.css
+└─ package.json</pre>
+
+  <div class="grid2">
+    <div>
+      <h4>Core logic — gesture state machine</h4>
+<pre><span class="k">IDLE</span>        no hand seen
+  → hand detected ⇒ <span class="k">ARMED</span>
+<span class="k">ARMED</span>       hand tracked, cursor shown
+  → pinch (dist(thumb,index) &lt; T_on) ⇒ <span class="k">DRAWING</span>
+<span class="k">DRAWING</span>     append {x,y,t} each frame
+  → release (dist &gt; T_off) ⇒ <span class="k">RECOGNIZING</span>
+<span class="k">RECOGNIZING</span> normalize → $1 → result
+  → render &amp; reset ⇒ <span class="k">ARMED</span></pre>
+      <p class="muted">Use hysteresis (T_on &lt; T_off) so the pinch doesn't flicker. Drop strokes under ~8 points.</p>
+    </div>
+    <div>
+      <h4>Core logic — $1 pipeline</h4>
+<pre><span class="a">1.</span> resample stroke → 64 even points
+<span class="a">2.</span> rotate so centroid→p[0]
+   angle = 0 (indicative angle)
+<span class="a">3.</span> scale to 250×250 ref box
+<span class="a">4.</span> translate centroid → origin
+<span class="a">5.</span> for each template:
+     avg point distance
+<span class="a">6.</span> score = 1 − dist / (0.5·√(2·250²))
+<span class="a">7.</span> best score &gt; 0.80 ⇒ accept
+   else ⇒ "not recognized"</pre>
+    </div>
+  </div>
+
+  <h4>Client state shape</h4>
+<pre>{ trackingStatus: <span class="a">'searching' | 'tracking' | 'lost'</span>,
+  fps: number,
+  fsmState: <span class="a">'idle'|'armed'|'drawing'|'recognizing'</span>,
+  currentStroke: {x,y,t}[],
+  lastResult: { shape: string, score: number } | null,
+  history: { shape, score, at }[] }</pre>
+
+  <h4>UI &amp; design spec (keep quality high)</h4>
+  <ul>
+    <li><b>Layout:</b> full-bleed dark stage; mirrored, dimmed webcam underlay; glowing fingertip cursor; fading trail; right-side history rail; bottom-left HUD.</li>
+    <li><b>States are visible:</b> the FSM state drives the cursor color (armed = muted, drawing = acid glow, recognizing = pulse). Users should always know if the "pen is down."</li>
+    <li><b>Forgiving feedback:</b> on "not recognized," show the closest guess + a hint, never a dead end.</li>
+    <li><b>Onboarding:</b> first-run overlay — "Allow camera → pinch to draw." Handle denied-permission and poor-lighting explicitly.</li>
+    <li><b>Accessibility:</b> respect <span class="mono">prefers-reduced-motion</span>; keyboard fallback to pick shapes; AA contrast; captioned status text (not color-only).</li>
+    <li><b>Presenter mode (ships in S1):</b> a HUD toggle that goes true-fullscreen and hides the history rail + controls, leaving only the canvas — ready for browser tab-share into Zoom/Meet (see §06).</li>
+    <li><b>Tokens:</b> reuse the shared design system in §05 so Stage 1 and 2 look like one product. Thicken strokes &amp; max contrast in presenter mode so shapes survive video compression.</li>
+  </ul>
+
+  <h4>Milestones — finish all = stage done</h4>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M0 · SETUP</span><div class="ti">Scaffold &amp; deploy an empty live skeleton</div><div class="tasks">Vite + React + TS, tokens.css, CI to Vercel.</div><span class="dod">DONE → public URL loads a blank stage</span></div></div>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M1 · TRACKING</span><div class="ti">Camera + hand landmarks on screen</div><div class="tasks">getUserMedia, HandLandmarker (VIDEO mode), draw index-tip dot, FPS HUD.</div><span class="dod">DONE → dot follows finger at 25–30 FPS</span></div></div>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M2 · CAPTURE</span><div class="ti">Smoothing + FSM + trail</div><div class="tasks">One-Euro filter, pinch detection w/ hysteresis, FSM, render live trail.</div><span class="dod">DONE → pinch draws a smooth trail; release ends it</span></div></div>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M3 · RECOGNIZE</span><div class="ti">$1 classification</div><div class="tasks">strokeUtils normalize, 6 templates, classify, threshold.</div><span class="dod">DONE → correct shape + score logged for all 6</span></div></div>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M4 · RENDER</span><div class="ti">Morph to clean preset + history</div><div class="tasks">map result→preset, animate trail→shape, history rail.</div><span class="dod">DONE → squiggle visibly becomes a crisp shape</span></div></div>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M5 · POLISH</span><div class="ti">States, onboarding, a11y, design pass</div><div class="tasks">permission/lighting UX, reduced-motion, contrast, responsive.</div><span class="dod">DONE → a stranger uses it with no instructions</span></div></div>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M6 · SHIP</span><div class="ti">Test + deploy + README</div><div class="tasks">accuracy/FPS matrix across lighting + devices, final deploy.</div><span class="dod">DONE → live link + README + demo gif</span></div></div>
+
+  <div class="grid2">
+    <div><h4>Testing</h4><ul><li>Unit: <span class="mono">strokeUtils</span> + <span class="mono">dollarRecognizer</span> (deterministic, fast).</li><li>Manual matrix: 6 shapes × 3 lighting conditions, log accuracy.</li><li>Perf: assert sustained ≥25 FPS; watch GC pauses.</li></ul></div>
+    <div><h4>Deploy</h4><ul><li><span class="mono">vite build</span> → Vercel static. HTTPS auto (camera needs it).</li><li>No env/secrets. README states webcam + lighting requirements.</li></ul></div>
+  </div>
+  <div class="callout"><b>Stage 1 Definition of Done:</b> ≥85% recognition on 6 shapes, sustained ≥25 FPS on a mid laptop, deployed public link, onboarding good enough that an untrained user succeeds. <b>Ship it before touching Stage 2.</b></div>
+</div></section>
+
+<!-- ===================== STAGE 2 ===================== -->
+<section class="sec stage2" id="stage2"><div class="wrap">
+  <div class="sec-id">04 / STAGE 2 — COMPLETE BUILD PLAN</div>
+  <div class="stagebanner s2banner"><span class="tg">Stage 02 · Full-Stack</span><span class="lv">3D + ML + backend · ~4–6 weeks</span></div>
+  <h2>Sketch-to-Model + <span class="c">Persistence</span></h2>
+  <p>Recognized sketches summon pre-loaded 3D objects you manipulate with your hands, and every scene saves to your account. Migrate to <b>Next.js</b> (one codebase = frontend + API), reusing the Stage 1 <span class="mono">lib/</span> modules verbatim.</p>
+
+  <h4>Architecture — data flow</h4>
+  <div class="flow">
+    <div class="box"><div class="t">CV (reused)</div><div class="n">Stroke</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">RASTERIZE</div><div class="n">28×28 bitmap</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">CLASSIFY</div><div class="n">TF.js CNN</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">MAP</div><div class="n">class→object</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">RENDER</div><div class="n">Three.js GLB</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">GESTURE</div><div class="n">rotate/scale</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">PERSIST</div><div class="n">API → Postgres</div></div>
+  </div>
+  <p class="muted">Keep the $1 recognizer as a fast fallback for crisp geometric shapes; route messy/organic sketches to the CNN.</p>
+
+  <h4>Tech stack (added on top of Stage 1)</h4>
+  <table>
+    <tr><th>Layer</th><th>Choice</th><th>Why</th></tr>
+    <tr><td>Framework</td><td class="mono">Next.js (App Router)</td><td>Frontend + API route handlers in one deploy.</td></tr>
+    <tr><td>3D</td><td class="mono">Three.js + react-three-fiber + drei</td><td>Declarative 3D in React; <span class="mono">useGLTF</span> for presets.</td></tr>
+    <tr><td>ML</td><td class="mono">TensorFlow.js (inference) · Keras (train)</td><td>Train offline, run quantized in-browser.</td></tr>
+    <tr><td>Backend</td><td class="mono">Next.js route handlers</td><td>Thin server layer over the DB.</td></tr>
+    <tr><td>DB + Auth</td><td class="mono">Supabase (Postgres + Auth + Storage)</td><td>Managed DB, row-level security, GLB hosting.</td></tr>
+    <tr><td>Hosting</td><td class="mono">Vercel + Supabase</td><td>Both free-tier friendly.</td></tr>
+  </table>
+
+  <h4>Project structure (additions)</h4>
+<pre><span class="c">airdraw/ (Next.js)</span>
+├─ app/
+│  ├─ page.tsx              <span class="c"># the stage</span>
+│  ├─ api/scenes/route.ts   <span class="c"># GET list / POST create</span>
+│  ├─ api/scenes/[id]/route.ts <span class="c"># GET/PUT/DELETE</span>
+│  └─ api/mappings/route.ts
+├─ lib/ (reused: oneEuroFilter, gestureFSM, strokeUtils, dollarRecognizer)
+│  ├─ classifier.ts         <span class="c"># load model, rasterize, predict, fallback</span>
+│  ├─ gestureTransform.ts   <span class="c"># hand pose → object transform</span>
+│  └─ supabase.ts           <span class="c"># client + server clients</span>
+├─ components/Scene3D.tsx · ObjectLibrary.tsx · SavePanel.tsx · AuthGate.tsx
+├─ public/
+│  ├─ model/ (model.json + *.bin)   <span class="c"># quantized CNN</span>
+│  └─ models/ (cell.glb, gear.glb, …)
+└─ ml/ (train.py, convert.sh)       <span class="c"># offline, not shipped</span></pre>
+
+  <h4>Database schema (Supabase / Postgres)</h4>
+<pre><span class="k">profiles</span>        id <span class="c">uuid PK→auth.users</span>, display_name, created_at
+<span class="k">scenes</span>          id <span class="c">uuid PK</span>, user_id <span class="c">FK</span>, name, created_at, updated_at
+<span class="k">scene_objects</span>   id, scene_id <span class="c">FK</span>, object_type <span class="c">text</span>,
+                position <span class="c">jsonb {x,y,z}</span>, rotation <span class="c">jsonb</span>, scale <span class="c">float</span>
+<span class="k">custom_mappings</span> id, user_id <span class="c">FK</span>, shape_class <span class="c">text</span>, object_type <span class="c">text</span>
+
+<span class="c">-- RLS on every table: a row is visible/writable only where
+--    user_id = auth.uid()  (scenes/mappings)
+--    or scene_id ∈ caller's scenes (scene_objects)</span></pre>
+
+  <div class="grid2">
+    <div>
+      <h4>API endpoints</h4>
+<pre><span class="a">GET</span>    /api/scenes        list mine
+<span class="a">POST</span>   /api/scenes        create {name}
+<span class="a">GET</span>    /api/scenes/:id    scene + objects
+<span class="a">PUT</span>    /api/scenes/:id    save objects[]
+<span class="a">DELETE</span> /api/scenes/:id
+<span class="a">GET</span>/<span class="a">POST</span> /api/mappings   custom map</pre>
+      <p class="muted">Server uses the Supabase server client; RLS enforces ownership even if a request is forged.</p>
+    </div>
+    <div>
+      <h4>Gesture → transform</h4>
+<pre>one pinch + drag → <span class="k">rotate</span>
+  Δx,Δy → euler.y, euler.x
+two hands:
+  Δdistance → <span class="k">scale</span>
+  Δmidpoint → <span class="k">translate</span>
+lerp/damp every frame (0.15)
+mouse-orbit fallback (no hands)</pre>
+    </div>
+  </div>
+
+  <h4>ML plan (the resume centerpiece)</h4>
+  <ul>
+    <li><b>Data:</b> Google QuickDraw <span class="mono">.npy</span> bitmaps — ~12 classes matching your presets (circle, square, triangle, star, arrow, line + a few organic ones), a few thousand samples each.</li>
+    <li><b>Preprocess:</b> 28×28 grayscale, normalized 0–1 (QuickDraw native size).</li>
+    <li><b>Model:</b> small CNN — <span class="mono">[Conv→Conv→Pool]×2 → Dense → softmax</span>; aim &lt;2 MB after quantization.</li>
+    <li><b>Train:</b> Keras in Colab; target ≥92% held-out accuracy; export to TF.js with <span class="mono">tensorflowjs_converter</span>.</li>
+    <li><b>Inference:</b> rasterize the air-drawn stroke onto an offscreen 28×28 canvas → <span class="mono">tf.browser.fromPixels</span> → predict → argmax. Target &lt;50 ms.</li>
+    <li><b>Hybrid logic:</b> if $1 score is high &amp; shape is geometric, take it (fast); else defer to the CNN. Log which path fired (measurable "ML beats baseline" story).</li>
+  </ul>
+
+  <h4>Milestones — finish all = stage done</h4>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M0 · SCAFFOLD</span><div class="ti">Next.js + port lib/ + Supabase project</div><div class="tasks">create schema + RLS, wire clients, env vars.</div><span class="dod">DONE → app runs, DB reachable, Stage-1 recognizer still works</span></div></div>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M1 · 3D</span><div class="ti">Viewport + GLB + class→object</div><div class="tasks">r3f scene, useGLTF presets, map recognizer output → spawn object. Enforce ≤1.5 MB per GLB via Draco compression to protect load speed.</div><span class="dod">DONE → drawing a circle spawns the cell model</span></div></div>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M2 · MANIPULATE</span><div class="ti">Two-hand gesture transforms</div><div class="tasks">gestureTransform.ts, damping, mouse fallback.</div><span class="dod">DONE → rotate &amp; scale feel smooth, no jitter</span></div></div>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M3 · ML</span><div class="ti">Train, convert, integrate CNN + fallback</div><div class="tasks">clean QuickDraw classes (strip corrupted entries), train, quantize, rasterize+predict, hybrid routing, eval vs $1.</div><span class="dod">DONE → CNN beats $1 on messy input (logged numbers)</span></div></div>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M4 · PERSIST</span><div class="ti">Auth + save/load + custom mappings</div><div class="tasks">Supabase Auth, API routes, RLS, SavePanel.</div><span class="dod">DONE → log in, save scene, reload → it restores</span></div></div>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M5 · POLISH</span><div class="ti">Design parity + performance budget</div><div class="tasks">object library UX, loading/empty states, model caching, a11y.</div><span class="dod">DONE → first interaction &lt;3s on cold load</span></div></div>
+  <div class="ms"><div class="box"></div><div class="body"><span class="id">M6 · SHIP</span><div class="ti">Test + deploy prod + seed</div><div class="tasks">round-trip + RLS-security + ML eval, deploy Vercel+Supabase, seed objects.</div><span class="dod">DONE → live full-stack link, real accounts work</span></div></div>
+
+  <div class="grid2">
+    <div><h4>Testing</h4><ul><li>Unit: transform math, class→object mapping.</li><li>Integration: scene save/load round-trip.</li><li>ML eval: held-out accuracy + confusion matrix.</li><li><b>Security:</b> verify user A cannot read user B's scenes (RLS test).</li><li>Perf: model load, inference ms, 3D FPS.</li></ul></div>
+    <div><h4>Deploy</h4><ul><li>Vercel (Next.js) + Supabase (managed Postgres/Auth).</li><li>Env: <span class="mono">SUPABASE_URL</span>, <span class="mono">ANON_KEY</span> (client), <span class="mono">SERVICE_ROLE</span> (server only).</li><li>Model in <span class="mono">/public/model</span> (CDN-cached) or Supabase Storage.</li></ul></div>
+  </div>
+  <div class="callout" style="border-left-color:var(--cyan);background:#0e1416"><b style="color:var(--cyan)">Stage 2 Definition of Done:</b> ≥12 object classes, the CNN demonstrably beats the $1 baseline on messy sketches, gestures manipulate objects fluidly, accounts + scene save/load work end-to-end with RLS verified, deployed as a live full-stack app.</div>
+</div></section>
+
+<!-- ===================== DESIGN SYSTEM ===================== -->
+<section class="sec" id="design"><div class="wrap">
+  <div class="sec-id">05 / SHARED DESIGN SYSTEM</div>
+  <h2>One look across <span class="a">both</span> stages</h2>
+  <p>Define these tokens once (<span class="mono">tokens.css</span>) and consume everywhere so Stage 1 and Stage 2 read as a single, intentional product — not two demos.</p>
+  <div class="grid2">
+    <div class="card">
+      <h4>Tokens</h4>
+      <p><span class="pill tag-a">--acid #c8f24e</span><span class="pill tag-c">--cyan #5fd4d6</span><span class="pill">--bg #0c0d10</span><span class="pill">--panel #131519</span><span class="pill">--ink #e9ece8</span></p>
+      <p class="muted" style="margin-top:8px">Type: <b>Bricolage Grotesque</b> (display) · <b>Hanken Grotesk</b> (body) · <b>JetBrains Mono</b> (labels/data). Radius 14px. 8px spacing grid.</p>
+    </div>
+    <div class="card">
+      <h4>Principles</h4>
+      <ul>
+        <li>Dark, instrument-panel calm so the glowing trail/object is the hero.</li>
+        <li>Acid = "live / your action"; cyan = "system / data"; warn = "attention."</li>
+        <li>Motion only where it informs: the morph, the recognizing pulse, staggered loads. Honor reduced-motion.</li>
+        <li>Every interface state has an explicit visual — never leave the user guessing if the pen is down.</li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<!-- ===================== RUN IT ===================== -->
+<!-- ===================== STREAMING ===================== -->
+<section class="sec" id="stream"><div class="wrap">
+  <div class="sec-id">06 / STREAMING &amp; BROADCASTING</div>
+  <h2>Getting it <span class="a">onto a call</span></h2>
+  <p>Kept separate from the core loops on purpose. Each phase lines up with a stage and gets progressively more capable. None of this blocks the core build.</p>
+  <div class="flow">
+    <div class="box"><div class="t">PHASE 1 (S1)</div><div class="n">Tab-share</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">PHASE 2 (S2)</div><div class="n">In-app record</div></div><div class="arr">→</div>
+    <div class="box"><div class="t">PHASE 3 (S3)</div><div class="n">OBS overlay</div></div>
+  </div>
+
+  <h4>Phase 1 · Zero-friction tab sharing — Zoom / Meet</h4>
+  <ul>
+    <li>Stage 1 is client-side, so the simplest broadcast is the browser's own screen-share. No code beyond UI.</li>
+    <li><b>Presenter Mode toggle</b> (built in S1): true fullscreen via the Fullscreen API, hide history rail + controls + chrome, canvas only.</li>
+    <li><b>Compression-safe tokens:</b> in presenter mode, thicken canvas strokes and push <span class="mono">--acid</span>-on-<span class="mono">--bg</span> contrast so shapes don't smear into artifacts on low-bandwidth video.</li>
+  </ul>
+
+  <h4>Phase 2 · Native in-app recording — async demos &amp; training clips</h4>
+  <ul>
+    <li><b>Tech:</b> <span class="mono">canvas.captureStream(30)</span> → <span class="mono">MediaRecorder</span>, fully client-side, no external recorder.</li>
+    <li><b>Codec:</b> default to <span class="mono">video/webm;codecs=vp9</span> (vp8 fallback). <span style="color:var(--warn)">mp4 from MediaRecorder is not reliably supported across browsers</span> — record webm, offer optional transcode later.</li>
+    <li><b>HUD "Record" module:</b> buffer chunks in memory, then drop a download link (<span class="mono">airdraw-session.webm</span>) on stop.</li>
+    <li><b>3D note:</b> for the Three.js canvas, init the renderer with <span class="mono">preserveDrawingBuffer: true</span> so captured frames aren't blank.</li>
+  </ul>
+
+  <h4>Phase 3 · Studio overlay — transparent virtual camera</h4>
+  <ul>
+    <li><b>Tech:</b> in-app chroma-key toggle + <b>OBS Studio</b> Virtual Camera (desktop app — a documented user workflow, not something the app automates).</li>
+    <li><b>In-app part:</b> a toggle that swaps <span class="mono">--bg</span> to pure <span class="mono">#00FF00</span>.</li>
+    <li><b>User workflow:</b> OBS → Window Capture of the browser → Chroma Key filter (green) → layer webcam/slides beneath → Start Virtual Camera → select "OBS Virtual Camera" in Zoom/Meet. The drawings float, transparent, over the presenter.</li>
+  </ul>
+  <div class="callout"><b>Reality check:</b> Phases 1–2 are app code an agent can build. Phase 3 depends on OBS, a desktop program the agent can't install or configure for you — the app only ships the green-screen toggle; the OBS steps are for you to follow.</div>
+</div></section>
+
+<!-- ===================== RUN IT ===================== -->
+<section class="sec" id="run"><div class="wrap">
+  <div class="sec-id">07 / EXECUTION</div>
+  <h2>How to run this plan</h2>
+  <ul>
+    <li><b>By hand:</b> work top-down M0→M6 within a stage; don't start a milestone until the previous done-criterion is observably true.</li>
+    <li><b>With a coding agent (e.g. Claude Code):</b> each milestone is self-contained — hand over the stack, file tree, and done-criterion for one milestone at a time, review against the criterion, then proceed. The schema and API specs above are copy-paste ready.</li>
+    <li><b>Always shippable:</b> deploy at M0 and keep it green; you'll always have a live link to show.</li>
+  </ul>
+  <div class="callout"><b>What an agent can one-shot vs. not:</b> <b>Stage 1 (incl. streaming Phase 1–2) is fully autonomous</b> — it's pure client-side code. Stage 2 needs <i>you</i> to create a Supabase project + paste keys and to train/convert the CNN (a Colab step); the agent scaffolds everything else. Stage 3 needs a deployed socket server, and streaming Phase 3 needs desktop OBS. So "build it all in one prompt" realistically means <b>all of Stage 1</b>; later stages are agent-built around a few manual prerequisites.</div>
+  <h4>Top risks &amp; mitigations</h4>
+  <table>
+    <tr><th>Risk</th><th>Mitigation</th></tr>
+    <tr><td>Hand tracking jittery / unreliable in bad light</td><td>One-Euro filter + on-screen lighting/permission guidance; set FPS floor in DoD.</td></tr>
+    <tr><td>Pinch gesture fires accidentally</td><td>Hysteresis thresholds + minimum stroke length; visible pen-down state.</td></tr>
+    <tr><td>Stage 2 ML scope balloons</td><td>$1 fallback means the app works even before the CNN; ML is an upgrade, not a blocker.</td></tr>
+    <tr><td>3D + gestures feel floaty</td><td>Damping/lerp, sensible limits, mouse-orbit fallback.</td></tr>
+    <tr><td>Cold-load latency (model + GLBs)</td><td>Quantize &lt;2MB, lazy-load, CDN cache; DoD &lt;3s to first interaction.</td></tr>
+  </table>
+  <p class="muted">Adjust class counts, thresholds, timelines, and stack to your actual experience — the structure holds regardless.</p>
+</div></section>
+
+<footer><div class="wrap">
+  AirDraw — Master Technical &amp; Build Plan · draft for planning. Tune scope and numbers to your build.
+</div></footer>
+
+</body>
+</html>

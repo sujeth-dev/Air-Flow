@@ -1,0 +1,54 @@
+:root {
+  --bg: #0c0d10;
+  --panel: #131519;
+  --line: #262a31;
+  --ink: #e9ece8;
+  --muted: #8b9199;
+  --acid: #c8f24e;
+  --cyan: #5fd4d6;
+  --warn: #f2a93b;
+  --stroke-w: 5px;
+  --radius: 14px;
+  --font-display: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Hanken Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+.presenter {
+  --bg: #000000;
+  --stroke-w: 9px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app-root {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
