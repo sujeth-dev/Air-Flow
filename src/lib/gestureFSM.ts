@@ -26,6 +26,10 @@ export class GestureFSM {
   private buffer: Point[] = [];
   private palmFrames = 0;
   private fingerOpenFrames = 0;
+  // After each palm event the palm must fully close before the next event can fire.
+  // Without this guard the event re-fires every 10 frames while the hand stays open,
+  // causing INACTIVE→ACTIVE→INACTIVE oscillation.
+  private requirePalmClose = false;
 
   update(input: FSMInput): FSMOutput {
     const { handPresent, palmOpen, indexExtended, indexCurled, point } = input;
@@ -35,19 +39,27 @@ export class GestureFSM {
       this.buffer = [];
       this.palmFrames = 0;
       this.fingerOpenFrames = 0;
+      this.requirePalmClose = false;
       return { state: 'INACTIVE', strokeInProgress: [], completedStroke: null };
     }
 
-    // Track consecutive palm-open frames for toggle detection
-    if (palmOpen) {
+    // Palm-event edge detection with close-to-reset guard
+    if (this.requirePalmClose) {
+      if (!palmOpen) {
+        this.requirePalmClose = false;
+        this.palmFrames = 0;
+      }
+      // No palmEvent fires while waiting for the hand to close
+    } else if (palmOpen) {
       this.palmFrames++;
     } else {
       this.palmFrames = 0;
     }
 
-    const palmEvent = this.palmFrames === PALM_FRAMES_REQUIRED;
+    const palmEvent = !this.requirePalmClose && this.palmFrames >= PALM_FRAMES_REQUIRED;
     if (palmEvent) {
-      this.palmFrames = 0; // reset so it doesn't re-fire next frame
+      this.palmFrames = 0;
+      this.requirePalmClose = true;
     }
 
     switch (this.state) {
@@ -73,7 +85,6 @@ export class GestureFSM {
           return { state: 'INACTIVE', strokeInProgress: [], completedStroke: null };
         }
         if (!indexExtended && !indexCurled) {
-          // finger relaxed back to non-pointing, non-drawing — return to ACTIVE
           this.state = 'ACTIVE';
           return { state: 'ACTIVE', strokeInProgress: [], completedStroke: null };
         }
@@ -116,5 +127,6 @@ export class GestureFSM {
     this.buffer = [];
     this.palmFrames = 0;
     this.fingerOpenFrames = 0;
+    this.requirePalmClose = false;
   }
 }

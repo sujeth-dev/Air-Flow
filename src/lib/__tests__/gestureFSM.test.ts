@@ -50,10 +50,23 @@ describe('GestureFSM', () => {
     expect(out.state).toBe('INACTIVE');
   });
 
-  it('ACTIVE → INACTIVE on second palm-open event', () => {
+  it('holding palm open after event does NOT re-fire (no oscillation)', () => {
+    palmOpenFrames(fsm, 10); // → ACTIVE
+    // Keep holding palm open for 30 more frames — must stay ACTIVE
+    for (let i = 0; i < 30; i++) {
+      const out = fsm.update(baseInput({ palmOpen: true }));
+      expect(out.state).toBe('ACTIVE');
+    }
+  });
+
+  it('ACTIVE → INACTIVE on second palm-open event (requires palm close between events)', () => {
     palmOpenFrames(fsm, 10); // → ACTIVE
     expect(fsm.update(baseInput()).state).toBe('ACTIVE');
-    palmOpenFrames(fsm, 10); // toggle off
+    // Close the palm (requirePalmClose resets)
+    fsm.update(baseInput({ palmOpen: false }));
+    fsm.update(baseInput({ palmOpen: false }));
+    // Now hold palm open again to toggle off
+    palmOpenFrames(fsm, 10);
     expect(fsm.update(baseInput()).state).toBe('INACTIVE');
   });
 
