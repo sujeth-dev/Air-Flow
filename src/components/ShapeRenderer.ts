@@ -1,6 +1,7 @@
 import type { Point } from '../lib/strokeUtils';
 import type { FSMState } from '../lib/gestureFSM';
 import { PRESETS } from '../data/presets';
+import { drawSelection } from './SelectionLayer';
 
 const ACID = '#c8f24e';
 const MUTED = '#8b9199';
@@ -34,6 +35,7 @@ export interface RenderState {
   canvasWidth: number;
   canvasHeight: number;
   reducedMotion: boolean;
+  selectedShapeId: string | null;
 }
 
 function strokeToCanvas(pts: Point[], w: number, h: number): Point[] {
@@ -113,7 +115,7 @@ export function renderFrame(
     }
   }
 
-  if (state.currentPoint && state.fsmState !== 'IDLE') {
+  if (state.currentPoint && state.fsmState !== 'INACTIVE') {
     const cx = state.currentPoint.x * w;
     const cy = state.currentPoint.y * h;
     const now = Date.now();
@@ -144,7 +146,23 @@ export function renderFrame(
       ctx.beginPath();
       ctx.arc(cx, cy, 6 + pulse * 4, 0, 2 * Math.PI);
       ctx.stroke();
+    } else if (state.fsmState === 'CURSOR') {
+      // Pointing cursor — acid dot with crosshair ring
+      ctx.shadowBlur = 14;
+      ctx.shadowColor = ACID;
+      ctx.fillStyle = ACID;
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 6, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = ACID;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.4;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 14, 0, 2 * Math.PI);
+      ctx.stroke();
     } else {
+      // ACTIVE state — muted dot
       ctx.shadowBlur = 0;
       ctx.fillStyle = MUTED;
       ctx.globalAlpha = 0.6;
@@ -161,6 +179,12 @@ export function renderFrame(
     }
 
     ctx.restore();
+  }
+
+  // Selection highlight
+  if (state.selectedShapeId) {
+    const sel = state.completedShapes.find((s) => s.id === state.selectedShapeId);
+    if (sel) drawSelection(ctx, sel);
   }
 }
 

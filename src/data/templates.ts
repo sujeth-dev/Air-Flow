@@ -67,14 +67,14 @@ function arrowPoints(n = 64, len = 200): Point[] {
     pts.push({ x: base.x + t * (tip.x - base.x), y: 0 });
   }
   for (let i = 0; i < wing; i++) {
-    const t = i / (wing - 1);
+    const t = wing > 1 ? i / (wing - 1) : 0;
     pts.push({
       x: tip.x - headLen * Math.cos(headAngle) * t,
       y: -headLen * Math.sin(headAngle) * t,
     });
   }
   for (let i = wing - 1; i >= 0; i--) {
-    const t = i / (wing - 1);
+    const t = wing > 1 ? i / (wing - 1) : 0;
     pts.push({
       x: tip.x - headLen * Math.cos(headAngle) * t,
       y: headLen * Math.sin(headAngle) * t,

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useHandTracking, type TrackingStatus } from './hooks/useHandTracking';
 import { useRecorder } from './hooks/useRecorder';
+import { useUndoRedo } from './hooks/useUndoRedo';
+import { useMouseFallback } from './hooks/useMouseFallback';
 import { GestureFSM, type FSMState } from './lib/gestureFSM';
 import { recognize } from './lib/dollarRecognizer';
 import { CanvasStage } from './components/CanvasStage';
@@ -8,6 +10,7 @@ import { Hud } from './components/Hud';
 import { HistoryRail, type HistoryEntry } from './components/HistoryRail';
 import { PresenterToggle } from './components/PresenterToggle';
 import { Toast } from './components/Toast';
+import { LoadingOverlay } from './components/LoadingOverlay';
 import {
   computeShapePlacement,
   type CompletedShape,
@@ -59,18 +62,18 @@ function OnboardingOverlay() {
         Air<span style={{ color: '#c8f24e' }}>Draw</span>
       </h1>
       <p style={{ color: '#8b9199', fontSize: 16, textAlign: 'center', maxWidth: 420 }}>
-        Draw shapes in mid-air with your fingertip. The stroke snaps to a clean shape automatically.
+        Draw shapes in mid-air with your fingertip. Activate with an open palm, then curl your index finger to draw.
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
         <Step n={1} text="Allow camera access when prompted" />
-        <Step n={2} text="Show your hand to the camera" />
-        <Step n={3} text="Pinch thumb + index finger to draw" />
-        <Step n={4} text="Release pinch to snap to a clean shape" />
+        <Step n={2} text="Show open palm to activate cursor" />
+        <Step n={3} text="Point with index finger to aim" />
+        <Step n={4} text="Curl index down to draw, uncurl to snap" />
       </div>
       <p style={{ color: '#5b626b', fontSize: 12, fontFamily: "'JetBrains Mono', monospace", marginTop: 8 }}>
-        Good lighting helps — face a window or lamp
+        Or press M for mouse mode — no camera needed
       </p>
-      <p style={{ color: '#5b626b', fontSize: 11, fontFamily: "'JetBrains Mono', monospace' " }}>
+      <p style={{ color: '#5b626b', fontSize: 11, fontFamily: "'JetBrains Mono', monospace" }}>
         Supports: circle · square · triangle · line · arrow · star
       </p>
     </div>
@@ -188,10 +191,9 @@ function NoHandOverlay({ status }: { status: TrackingStatus }) {
 }
 
 export default function App() {
-  const [fsmState, setFsmState] = useState<FSMState>('IDLE');
+  const [fsmState, setFsmState] = useState<FSMState>('INACTIVE');
   const [strokeInProgress, setStrokeInProgress] = useState<Point[]>([]);
   const [currentPoint, setCurrentPoint] = useState<Point | null>(null);
-  const [completedShapes, setCompletedShapes] = useState<CompletedShape[]>([]);
   const [morphAnimations, setMorphAnimations] = useState<MorphAnimation[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [fps, setFps] = useState(0);
@@ -200,23 +202,97 @@ export default function App() {
   const [toast, setToast] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [mouseModeEnabled, setMouseModeEnabled] = useState(false);
+  const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
+
+  const {
+    state: completedShapes,
+    set: setCompletedShapes,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useUndoRedo<CompletedShape[]>([]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fsmRef = useRef(new GestureFSM());
   const recordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastFpsUpdateRef = useRef(0);
+  const completedShapesRef = useRef(completedShapes);
+
+  // Keep completedShapesRef in sync without triggering re-renders
+  useEffect(() => {
+    completedShapesRef.current = completedShapes;
+  }, [completedShapes]);
 
   const { isRecording, start: startRecording, stop: stopRecording } = useRecorder(canvasRef);
 
-  useEffect(() => {
-    if (isRecording) {
-      setRecordingSeconds(0);
-      recordTimerRef.current = setInterval(() => {
-        setRecordingSeconds(s => s + 1);
-      }, 1000);
+  const handleCompletedStroke = useCallback((stroke: Point[]) => {
+    if (!stroke || stroke.length === 0) return;
+    const result = recognize(stroke);
+    const current = completedShapesRef.current;
+
+    if (result.score >= ACCEPTANCE_THRESHOLD) {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const placement = computeShapePlacement(stroke, w, h);
+      const id = genId();
+
+      if (reducedMotion) {
+        setCompletedShapes([...current, { id, shape: result.name, ...placement }]);
+      } else {
+        const anim: MorphAnimation = {
+          id,
+          shape: result.name,
+          sourceStroke: stroke,
+          progress: 0,
+          ...placement,
+        };
+        setMorphAnimations((prev) => [...prev, anim]);
+
+        const startTime = performance.now();
+        function animStep() {
+          const elapsed = performance.now() - startTime;
+          const progress = Math.min(1, elapsed / MORPH_DURATION_MS);
+          setMorphAnimations((prev) => prev.map((a) => (a.id === id ? { ...a, progress } : a)));
+          if (progress < 1) {
+            requestAnimationFrame(animStep);
+          } else {
+            setMorphAnimations((prev) => prev.filter((a) => a.id !== id));
+            setCompletedShapes([
+              ...completedShapesRef.current,
+              { id, shape: result.name, cx: placement.cx, cy: placement.cy, size: placement.size },
+            ]);
+          }
+        }
+        requestAnimationFrame(animStep);
+      }
+
+      setHistory((prev) => [
+        { id, shape: result.name, score: result.score, at: Date.now() },
+        ...prev.slice(0, 9),
+      ]);
     } else {
-      if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+      setToast(
+        `Closest match: "${result.name}" (${Math.round(result.score * 100)}%) — try a cleaner stroke`,
+      );
     }
+  }, [setCompletedShapes]);
+
+  // Mouse fallback — declared after handleCompletedStroke
+  useMouseFallback(canvasRef, handleCompletedStroke, mouseModeEnabled);
+
+  // Recording timer — only calls setState inside the interval callback
+  useEffect(() => {
+    if (!isRecording) {
+      if (recordTimerRef.current) clearInterval(recordTimerRef.current);
+      return;
+    }
+    const startTime = Date.now();
+    recordTimerRef.current = setInterval(() => {
+      setRecordingSeconds(Math.floor((Date.now() - startTime) / 1000));
+    }, 500);
     return () => {
       if (recordTimerRef.current) clearInterval(recordTimerRef.current);
     };
@@ -240,10 +316,77 @@ export default function App() {
     }
   }, [presenterMode]);
 
+  const handleDeleteShape = useCallback((id: string) => {
+    setCompletedShapes(completedShapesRef.current.filter((s) => s.id !== id));
+    setHistory((prev) => prev.filter((h) => h.id !== id));
+    setSelectedShapeId((sid) => (sid === id ? null : sid));
+  }, [setCompletedShapes]);
+
+  const handleMoveShape = useCallback((id: string, cx: number, cy: number) => {
+    setCompletedShapes(completedShapesRef.current.map((s) => (s.id === id ? { ...s, cx, cy } : s)));
+  }, [setCompletedShapes]);
+
+  const handleResizeShape = useCallback((id: string, size: number) => {
+    setCompletedShapes(completedShapesRef.current.map((s) => (s.id === id ? { ...s, size } : s)));
+  }, [setCompletedShapes]);
+
+  const handleScreenshot = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `airdraw-${Date.now()}.png`;
+    a.click();
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+      if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if (
+        (e.key === 'y' && (e.ctrlKey || e.metaKey)) ||
+        (e.key === 'z' && (e.ctrlKey || e.metaKey) && e.shiftKey)
+      ) {
+        e.preventDefault();
+        redo();
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedShapeId) {
+        e.preventDefault();
+        handleDeleteShape(selectedShapeId);
+      } else if (e.key === 'Escape') {
+        setSelectedShapeId(null);
+      } else if (e.key === 'm' || e.key === 'M') {
+        setMouseModeEnabled((m) => !m);
+      } else if (e.key === 'p' || e.key === 'P') {
+        handlePresenterToggle();
+      } else if (e.key === 'r' || e.key === 'R') {
+        handleRecordToggle();
+      } else if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleScreenshot();
+      } else if (e.key === 'X' && e.ctrlKey && e.shiftKey) {
+        e.preventDefault();
+        if (window.confirm('Clear all shapes?')) {
+          setCompletedShapes([]);
+          setHistory([]);
+        }
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undo, redo, selectedShapeId, handleDeleteShape, handlePresenterToggle, handleRecordToggle, handleScreenshot, setCompletedShapes]);
+
   const handleFrame = useCallback(
     (data: {
       point: Point;
-      pinchDistance: number;
+      palmOpen: boolean;
+      indexExtended: boolean;
+      indexCurled: boolean;
       handPresent: boolean;
       fps: number;
       trackingStatus: TrackingStatus;
@@ -261,83 +404,43 @@ export default function App() {
       setTrackingStatus(data.trackingStatus);
       setCurrentPoint(data.handPresent ? data.point : null);
 
-      const { state, strokeInProgress: sip, completedStroke } = fsmRef.current.update({
-        handPresent: data.handPresent,
-        pinchDistance: data.pinchDistance,
-        point: data.point,
-        t: now,
-      });
+      if (!mouseModeEnabled) {
+        const { state, strokeInProgress: sip, completedStroke } = fsmRef.current.update({
+          handPresent: data.handPresent,
+          palmOpen: data.palmOpen,
+          indexExtended: data.indexExtended,
+          indexCurled: data.indexCurled,
+          point: data.point,
+          t: now,
+        });
 
-      setFsmState(state);
-      setStrokeInProgress([...sip]);
+        setFsmState(state);
+        setStrokeInProgress([...sip]);
 
-      if (completedStroke && completedStroke.length > 0) {
-        const result = recognize(completedStroke);
-
-        if (result.score >= ACCEPTANCE_THRESHOLD) {
-          const w = window.innerWidth;
-          const h = window.innerHeight;
-          const placement = computeShapePlacement(completedStroke, w, h);
-          const id = genId();
-
-          if (reducedMotion) {
-            setCompletedShapes(prev => [
-              ...prev,
-              { id, shape: result.name, ...placement },
-            ]);
-          } else {
-            const anim: MorphAnimation = {
-              id,
-              shape: result.name,
-              sourceStroke: completedStroke,
-              progress: 0,
-              ...placement,
-            };
-            setMorphAnimations(prev => [...prev, anim]);
-
-            const startTime = performance.now();
-            function animStep() {
-              const elapsed = performance.now() - startTime;
-              const progress = Math.min(1, elapsed / MORPH_DURATION_MS);
-
-              setMorphAnimations(prev =>
-                prev.map(a => (a.id === id ? { ...a, progress } : a))
-              );
-
-              if (progress < 1) {
-                requestAnimationFrame(animStep);
-              } else {
-                setMorphAnimations(prev => prev.filter(a => a.id !== id));
-                setCompletedShapes(prev => [
-                  ...prev,
-                  { id, shape: result.name, cx: placement.cx, cy: placement.cy, size: placement.size },
-                ]);
-              }
-            }
-            requestAnimationFrame(animStep);
-          }
-
-          setHistory(prev => [
-            { id, shape: result.name, score: result.score, at: Date.now() },
-            ...prev.slice(0, 9),
-          ]);
-        } else {
-          setToast(
-            `Closest match: "${result.name}" (${Math.round(result.score * 100)}%) — try a cleaner stroke`
-          );
+        if (completedStroke && completedStroke.length > 0) {
+          handleCompletedStroke(completedStroke);
         }
       }
     },
-    [showOnboarding]
+    [showOnboarding, mouseModeEnabled, handleCompletedStroke],
   );
 
-  const { videoRef, error } = useHandTracking(handleFrame);
+  const { videoRef, error } = useHandTracking(handleFrame, setLoadingProgress);
 
   if (error) return <CameraErrorOverlay message={error} />;
 
+  const showLoadingOverlay = trackingStatus === 'loading';
+
   return (
     <div style={{ width: '100%', height: '100%', background: 'var(--bg)' }}>
-      {showOnboarding && trackingStatus === 'loading' && <OnboardingOverlay />}
+      {showLoadingOverlay && (
+        <LoadingOverlay
+          progress={loadingProgress}
+          phase={loadingProgress >= 100 ? 'initializing' : 'downloading'}
+        />
+      )}
+
+      {showOnboarding && !showLoadingOverlay && <OnboardingOverlay />}
 
       <CanvasStage
         fsmState={fsmState}
@@ -348,6 +451,12 @@ export default function App() {
         presenterMode={presenterMode}
         videoRef={videoRef}
         canvasRef={canvasRef}
+        selectedShapeId={selectedShapeId}
+        onSelectShape={setSelectedShapeId}
+        onDeleteShape={handleDeleteShape}
+        onMoveShape={handleMoveShape}
+        onResizeShape={handleResizeShape}
+        mouseModeEnabled={mouseModeEnabled}
       />
 
       <NoHandOverlay status={trackingStatus} />
@@ -360,9 +469,20 @@ export default function App() {
         recordingSeconds={recordingSeconds}
         onRecordToggle={handleRecordToggle}
         presenterMode={presenterMode}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onUndo={undo}
+        onRedo={redo}
+        mouseModeEnabled={mouseModeEnabled}
+        onMouseModeToggle={() => setMouseModeEnabled((m) => !m)}
+        loadingProgress={loadingProgress}
       />
 
-      <HistoryRail history={history} presenterMode={presenterMode} />
+      <HistoryRail
+        history={history}
+        presenterMode={presenterMode}
+        onDeleteShape={handleDeleteShape}
+      />
 
       <PresenterToggle presenterMode={presenterMode} onToggle={handlePresenterToggle} />
 

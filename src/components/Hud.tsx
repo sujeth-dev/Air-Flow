@@ -9,14 +9,22 @@ interface Props {
   recordingSeconds: number;
   onRecordToggle: () => void;
   presenterMode: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+  mouseModeEnabled: boolean;
+  onMouseModeToggle: () => void;
+  loadingProgress: number;
 }
 
 function fsmColor(state: FSMState): string {
   switch (state) {
     case 'DRAWING': return '#c8f24e';
     case 'RECOGNIZING': return '#5fd4d6';
-    case 'ARMED': return '#8b9199';
-    case 'IDLE': return '#5b626b';
+    case 'CURSOR': return '#f2a93b';
+    case 'ACTIVE': return '#8b9199';
+    case 'INACTIVE': return '#5b626b';
   }
 }
 
@@ -41,6 +49,22 @@ function formatSeconds(s: number): string {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
+const chipStyle = {
+  background: '#131519',
+  border: '1px solid #262a31',
+  borderRadius: 7,
+  padding: '4px 9px',
+  color: '#8b9199',
+  fontFamily: "'JetBrains Mono', monospace",
+  fontSize: 12,
+} as const;
+
+const iconBtnStyle = {
+  ...chipStyle,
+  cursor: 'pointer',
+  transition: 'opacity 0.1s',
+} as const;
+
 export function Hud({
   fps,
   trackingStatus,
@@ -49,6 +73,13 @@ export function Hud({
   recordingSeconds,
   onRecordToggle,
   presenterMode,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  mouseModeEnabled,
+  onMouseModeToggle,
+  loadingProgress,
 }: Props) {
   if (presenterMode) return null;
 
@@ -70,49 +101,81 @@ export function Hud({
         userSelect: 'none',
       }}
     >
+      {/* Loading progress bar */}
+      {trackingStatus === 'loading' && loadingProgress < 100 && (
+        <div style={{ width: 180, height: 4, background: '#262a31', borderRadius: 2, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            width: `${loadingProgress}%`,
+            background: 'linear-gradient(90deg, #5fd4d6, #c8f24e)',
+            borderRadius: 2,
+            transition: 'width 0.15s ease',
+          }} />
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <span
-          style={{
-            background: '#131519',
-            border: '1px solid #262a31',
-            borderRadius: 7,
-            padding: '4px 9px',
-            color: fpsColor(fps),
-          }}
+          style={{ ...chipStyle, color: fpsColor(fps) }}
           aria-label={`${Math.round(fps)} frames per second`}
         >
           {Math.round(fps)} FPS
         </span>
 
         <span
-          style={{
-            background: '#131519',
-            border: '1px solid #262a31',
-            borderRadius: 7,
-            padding: '4px 9px',
-            color: '#8b9199',
-          }}
+          style={chipStyle}
           aria-label={`Tracking status: ${trackingLabel(trackingStatus)}`}
         >
           {trackingLabel(trackingStatus)}
         </span>
 
         <span
-          style={{
-            background: '#131519',
-            border: '1px solid #262a31',
-            borderRadius: 7,
-            padding: '4px 9px',
-            color: fsmColor(fsmState),
-            textTransform: 'uppercase',
-            letterSpacing: '0.12em',
-          }}
+          style={{ ...chipStyle, color: fsmColor(fsmState), textTransform: 'uppercase', letterSpacing: '0.12em' }}
           aria-label={`Gesture state: ${fsmState}`}
         >
           {fsmState}
         </span>
       </div>
 
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        {/* Undo */}
+        <button
+          onClick={onUndo}
+          disabled={!canUndo}
+          aria-label="Undo (Ctrl+Z)"
+          title="Undo (Ctrl+Z)"
+          style={{ ...iconBtnStyle, opacity: canUndo ? 1 : 0.35 }}
+        >
+          ↩ Undo
+        </button>
+
+        {/* Redo */}
+        <button
+          onClick={onRedo}
+          disabled={!canRedo}
+          aria-label="Redo (Ctrl+Y)"
+          title="Redo (Ctrl+Y)"
+          style={{ ...iconBtnStyle, opacity: canRedo ? 1 : 0.35 }}
+        >
+          ↪ Redo
+        </button>
+
+        {/* Mouse mode */}
+        <button
+          onClick={onMouseModeToggle}
+          aria-label={mouseModeEnabled ? 'Disable mouse mode (M)' : 'Enable mouse mode (M)'}
+          title="Mouse mode (M)"
+          style={{
+            ...iconBtnStyle,
+            borderColor: mouseModeEnabled ? '#c8f24e' : '#262a31',
+            color: mouseModeEnabled ? '#c8f24e' : '#8b9199',
+          }}
+        >
+          🖱 Mouse
+        </button>
+      </div>
+
+      {/* Record */}
       <button
         onClick={onRecordToggle}
         aria-label={isRecording ? 'Stop recording' : 'Start recording'}
@@ -133,16 +196,14 @@ export function Hud({
       >
         <span
           style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
+            width: 8, height: 8, borderRadius: '50%',
             background: isRecording ? '#ff4444' : '#8b9199',
             animation: isRecording ? 'pulse 1s ease-in-out infinite' : 'none',
             flexShrink: 0,
           }}
           aria-hidden="true"
         />
-        {isRecording ? `Stop · ${formatSeconds(recordingSeconds)}` : 'Record'}
+        {isRecording ? `Stop · ${formatSeconds(recordingSeconds)}` : 'Record (R)'}
       </button>
 
       <style>{`

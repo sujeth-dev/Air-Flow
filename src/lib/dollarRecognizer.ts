@@ -80,6 +80,7 @@ export function addTemplate(name: string, rawPoints: Point[]): void {
 }
 
 export function recognize(rawPoints: Point[]): { name: string; score: number } {
+  if (rawPoints.length < 8) return { name: 'unknown', score: 0 };
   const pts = preprocess(rawPoints);
   const half = 0.5 * Math.sqrt(2 * SIZE * SIZE);
 

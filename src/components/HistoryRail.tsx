@@ -11,6 +11,7 @@ export interface HistoryEntry {
 interface Props {
   history: HistoryEntry[];
   presenterMode: boolean;
+  onDeleteShape?: (id: string) => void;
 }
 
 function GlyphCanvas({ shape }: { shape: string }) {
@@ -36,7 +37,7 @@ function GlyphCanvas({ shape }: { shape: string }) {
   );
 }
 
-export function HistoryRail({ history, presenterMode }: Props) {
+export function HistoryRail({ history, presenterMode, onDeleteShape }: Props) {
   if (presenterMode) return null;
 
   return (
@@ -88,8 +89,38 @@ export function HistoryRail({ history, presenterMode }: Props) {
             alignItems: 'center',
             gap: 4,
             animation: 'slideIn 0.2s ease-out',
+            position: 'relative',
           }}
         >
+          {onDeleteShape && (
+            <button
+              onClick={() => onDeleteShape(entry.id)}
+              aria-label={`Delete ${entry.shape}`}
+              title="Delete shape"
+              style={{
+                position: 'absolute',
+                top: 3,
+                right: 3,
+                width: 16,
+                height: 16,
+                borderRadius: '50%',
+                background: 'transparent',
+                border: 'none',
+                color: '#5b626b',
+                fontSize: 10,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                lineHeight: 1,
+              }}
+              onMouseEnter={(e) => { (e.target as HTMLButtonElement).style.color = '#ff6b6b'; }}
+              onMouseLeave={(e) => { (e.target as HTMLButtonElement).style.color = '#5b626b'; }}
+            >
+              ×
+            </button>
+          )}
           <GlyphCanvas shape={entry.shape} />
           <span
             style={{

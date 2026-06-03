@@ -18,7 +18,10 @@ export function centroid(pts: Point[]): Point {
 
 export function resample(pts: Point[], n = 64): Point[] {
   if (pts.length === 0) return [];
-  if (pts.length === 1) return Array(n).fill({ ...pts[0] });
+  if (pts.length === 1) {
+    const p = pts[0];
+    return Array.from({ length: n }, () => ({ x: p.x, y: p.y }));
+  }
 
   const total = pathLength(pts);
   const interval = total / (n - 1);
