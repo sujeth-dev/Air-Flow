@@ -61,13 +61,10 @@ export function isIndexExtended(landmarks: NormalizedLandmark[]): boolean {
 export function isIndexCurled(landmarks: NormalizedLandmark[]): boolean {
   if (landmarks.length < 21) return false;
   const indexTip = landmarks[8];
-  const indexMcp = landmarks[5];
-  const wrist = landmarks[0];
-
-  // Index tip is closer to wrist than MCP joint = curled
-  const tipToWrist = dist2d(indexTip, wrist);
-  const mcpToWrist = dist2d(indexMcp, wrist);
-  return tipToWrist < mcpToWrist * 0.85;
+  const indexPip = landmarks[6];
+  // y increases downward; tip below PIP = finger is genuinely bent/curled
+  // +0.015 buffer avoids triggering on a neutral relaxed hand
+  return indexTip.y > indexPip.y + 0.015;
 }
 
 export function isFistClosed(landmarks: NormalizedLandmark[]): boolean {

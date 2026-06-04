@@ -1,10 +1,11 @@
 import type { Point } from './strokeUtils';
 
 const MIN_POINTS = 8;
-const PALM_FRAMES_REQUIRED = 10;
+const PALM_ACTIVATE_MS = 3000;
+const HAND_LOST_GRACE_MS = 500;
 const FINGER_OPEN_HYSTERESIS = 5;
 
-export type FSMState = 'INACTIVE' | 'ACTIVE' | 'CURSOR' | 'DRAWING' | 'RECOGNIZING';
+export type FSMState = 'INACTIVE' | 'ACTIVE' | 'DRAWING' | 'RECOGNIZING';
 
 export interface FSMInput {
   handPresent: boolean;
@@ -24,49 +25,59 @@ export interface FSMOutput {
 export class GestureFSM {
   private state: FSMState = 'INACTIVE';
   private buffer: Point[] = [];
-  private palmFrames = 0;
+  private palmStartTime: number | null = null;
   private fingerOpenFrames = 0;
-  // After each palm event the palm must fully close before the next event can fire.
-  // Without this guard the event re-fires every 10 frames while the hand stays open,
-  // causing INACTIVE→ACTIVE→INACTIVE oscillation.
   private requirePalmClose = false;
+  private lastHandPresentTime: number = 0;
 
   update(input: FSMInput): FSMOutput {
-    const { handPresent, palmOpen, indexExtended, indexCurled, point } = input;
+    const { handPresent, palmOpen, indexCurled, point } = input;
 
-    if (!handPresent) {
+    if (handPresent) this.lastHandPresentTime = input.t;
+
+    const isHandReallyLost =
+      !handPresent && input.t - this.lastHandPresentTime > HAND_LOST_GRACE_MS;
+
+    if (isHandReallyLost) {
       this.state = 'INACTIVE';
       this.buffer = [];
-      this.palmFrames = 0;
+      this.palmStartTime = null;
       this.fingerOpenFrames = 0;
       this.requirePalmClose = false;
+      this.lastHandPresentTime = 0;
       return { state: 'INACTIVE', strokeInProgress: [], completedStroke: null };
     }
 
-    // Palm-event edge detection with close-to-reset guard
+    // In grace period (hand briefly lost) — maintain current state, skip palm detection
+    if (!handPresent) {
+      return { state: this.state, strokeInProgress: [...this.buffer], completedStroke: null };
+    }
+
+    // Palm timing with close-to-reset guard
     if (this.requirePalmClose) {
       if (!palmOpen) {
         this.requirePalmClose = false;
-        this.palmFrames = 0;
+        this.palmStartTime = null;
       }
-      // No palmEvent fires while waiting for the hand to close
     } else if (palmOpen) {
-      this.palmFrames++;
+      if (this.palmStartTime === null) this.palmStartTime = input.t;
     } else {
-      this.palmFrames = 0;
+      this.palmStartTime = null;
     }
 
-    const palmEvent = !this.requirePalmClose && this.palmFrames >= PALM_FRAMES_REQUIRED;
+    const palmEvent =
+      !this.requirePalmClose &&
+      this.palmStartTime !== null &&
+      input.t - this.palmStartTime >= PALM_ACTIVATE_MS;
+
     if (palmEvent) {
-      this.palmFrames = 0;
+      this.palmStartTime = null;
       this.requirePalmClose = true;
     }
 
     switch (this.state) {
       case 'INACTIVE':
-        if (palmEvent) {
-          this.state = 'ACTIVE';
-        }
+        if (palmEvent) this.state = 'ACTIVE';
         return { state: this.state, strokeInProgress: [], completedStroke: null };
 
       case 'ACTIVE':
@@ -74,27 +85,13 @@ export class GestureFSM {
           this.state = 'INACTIVE';
           return { state: 'INACTIVE', strokeInProgress: [], completedStroke: null };
         }
-        if (indexExtended) {
-          this.state = 'CURSOR';
-        }
-        return { state: this.state, strokeInProgress: [], completedStroke: null };
-
-      case 'CURSOR':
-        if (palmEvent) {
-          this.state = 'INACTIVE';
-          return { state: 'INACTIVE', strokeInProgress: [], completedStroke: null };
-        }
-        if (!indexExtended && !indexCurled) {
-          this.state = 'ACTIVE';
-          return { state: 'ACTIVE', strokeInProgress: [], completedStroke: null };
-        }
         if (indexCurled) {
           this.state = 'DRAWING';
           this.buffer = [point];
           this.fingerOpenFrames = 0;
           return { state: 'DRAWING', strokeInProgress: [point], completedStroke: null };
         }
-        return { state: 'CURSOR', strokeInProgress: [], completedStroke: null };
+        return { state: 'ACTIVE', strokeInProgress: [], completedStroke: null };
 
       case 'DRAWING': {
         if (!indexCurled) {
@@ -125,8 +122,9 @@ export class GestureFSM {
   reset(): void {
     this.state = 'INACTIVE';
     this.buffer = [];
-    this.palmFrames = 0;
+    this.palmStartTime = null;
     this.fingerOpenFrames = 0;
     this.requirePalmClose = false;
+    this.lastHandPresentTime = 0;
   }
 }

@@ -146,21 +146,6 @@ export function renderFrame(
       ctx.beginPath();
       ctx.arc(cx, cy, 6 + pulse * 4, 0, 2 * Math.PI);
       ctx.stroke();
-    } else if (state.fsmState === 'CURSOR') {
-      // Pointing cursor — acid dot with crosshair ring
-      ctx.shadowBlur = 14;
-      ctx.shadowColor = ACID;
-      ctx.fillStyle = ACID;
-      ctx.globalAlpha = 0.85;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 6, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.strokeStyle = ACID;
-      ctx.lineWidth = 1.5;
-      ctx.globalAlpha = 0.4;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 14, 0, 2 * Math.PI);
-      ctx.stroke();
     } else {
       // ACTIVE state — muted dot
       ctx.shadowBlur = 0;

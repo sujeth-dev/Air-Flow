@@ -22,7 +22,6 @@ function fsmColor(state: FSMState): string {
   switch (state) {
     case 'DRAWING': return '#c8f24e';
     case 'RECOGNIZING': return '#5fd4d6';
-    case 'CURSOR': return '#f2a93b';
     case 'ACTIVE': return '#8b9199';
     case 'INACTIVE': return '#5b626b';
   }
