@@ -1,4 +1,4 @@
-import type { Point } from '../lib/strokeUtils';
+import type { Point } from '../engine/stroke';
 
 function circlePoints(n = 64, r = 100): Point[] {
   return Array.from({ length: n }, (_, i) => {

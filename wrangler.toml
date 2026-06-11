@@ -1,0 +1,6 @@
+# Cloudflare Pages config — `wrangler pages deploy dist` reads this.
+# Vite output dir is `dist/`. SPA fallback + headers live in public/_redirects + public/_headers
+# (those files are copied verbatim to the deployed root by Vite).
+name = "air-flow"
+compatibility_date = "2025-06-01"
+pages_build_output_dir = "dist"

@@ -50,6 +50,7 @@ export function useRecorder(canvasRef: React.RefObject<HTMLCanvasElement>): {
       recorderRef.current = recorder;
       setIsRecording(true);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error('Recording failed to start:', err);
     }
   }

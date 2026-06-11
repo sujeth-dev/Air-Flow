@@ -1,4 +1,4 @@
-import type { Point } from './strokeUtils';
+import type { Point } from './stroke';
 
 const MIN_POINTS = 8;
 const PALM_ACTIVATE_MS = 3000;

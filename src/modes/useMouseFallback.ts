@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { Point } from '../lib/strokeUtils';
+import type { Point } from '../engine/stroke';
 
 const MIN_POINTS = 8;
 

@@ -1,6 +1,6 @@
 export type NormalizedLandmark = { x: number; y: number; z: number };
 
-import type { Point } from './strokeUtils';
+import type { Point } from '../engine/stroke';
 
 // Landmark indices (MediaPipe hand model)
 // 0=wrist, 4=thumb tip, 5=index MCP, 6=index PIP, 8=index tip
@@ -173,4 +173,5 @@ export function getHandCenter(landmarks: NormalizedLandmark[]): Point {
     x: 1 - (wrist.x + middleMcp.x) / 2,
     y: (wrist.y + middleMcp.y) / 2,
   };
+
 }

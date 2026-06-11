@@ -1,12 +1,12 @@
-import type { Point } from './strokeUtils';
+import type { Point } from '../engine/stroke';
 import {
   resample,
   indicativeAngle,
   rotateBy,
   scaleToSquare,
   translateToOrigin,
-} from './strokeUtils';
-import { TEMPLATES } from '../data/templates';
+} from '../engine/stroke';
+import { TEMPLATES } from './templates';
 
 const SIZE = 250;
 const NUM_POINTS = 64;

@@ -1,6 +1,6 @@
-import type { Point } from '../lib/strokeUtils';
-import type { FSMState } from '../lib/gestureFSM';
-import { PRESETS } from '../data/presets';
+import type { Point } from '../engine/stroke';
+import type { FSMState } from '../engine/gestureFSM';
+import { PRESETS } from '../engine/presets';
 import { drawSelection } from './SelectionLayer';
 
 const ACID = '#c8f24e';

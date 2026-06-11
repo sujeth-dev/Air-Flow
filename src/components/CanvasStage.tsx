@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import type { FSMState } from '../lib/gestureFSM';
-import type { Point } from '../lib/strokeUtils';
+import type { FSMState } from '../engine/gestureFSM';
+import type { Point } from '../engine/stroke';
 import type { CompletedShape, MorphAnimation } from './ShapeRenderer';
 import { renderFrame } from './ShapeRenderer';
 import { hitTestAllShapes } from './SelectionLayer';

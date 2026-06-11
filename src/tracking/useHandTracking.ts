@@ -1,16 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { HandLandmarker as HandLandmarkerType } from '@mediapipe/tasks-vision';
 import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision';
-import { OneEuroFilter } from '../lib/oneEuroFilter';
-import type { Point } from '../lib/strokeUtils';
-import type { NormalizedLandmark } from '../lib/handGestures';
+import { OneEuroFilter } from '../engine/oneEuroFilter';
+import type { Point } from '../engine/stroke';
+import type { NormalizedLandmark } from './handReader';
 import {
   isPalmOpen,
   isIndexExtended,
   isIndexCurled,
   getIndexTip,
-} from '../lib/handGestures';
-import { getCachedModel, setCachedModel, fetchWithProgress } from './useModelCache';
+} from './handReader';
+import { getCachedModel, setCachedModel, fetchWithProgress } from './modelCache';
 
 export type TrackingStatus = 'loading' | 'searching' | 'tracking' | 'lost';
 

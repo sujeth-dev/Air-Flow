@@ -1,17 +1,51 @@
+/* ============================================================
+ * Air-Flow — design tokens (v2)
+ * Ported verbatim from the AirDraw masterplan style guide.
+ * ========================================================== */
+
 :root {
-  --bg: #0c0d10;
-  --panel: #131519;
-  --line: #262a31;
-  --ink: #e9ece8;
-  --muted: #8b9199;
+  /* Surfaces */
+  --bg: #07080b;
+  --bg-2: #0a0c11;
+  --panel: #0e1016;
+  --panel-2: #11141c;
+
+  /* Ink */
+  --ink: #eef1ee;
+  --muted: #9aa1ab;
+  --faint: #646b76;
+
+  /* Lines */
+  --line: rgba(255, 255, 255, 0.10);
+  --line-2: rgba(255, 255, 255, 0.06);
+
+  /* Brand palette */
   --acid: #c8f24e;
   --cyan: #5fd4d6;
+  --violet: #a78bfa;
+  --magenta: #f472b6;
+  --coral: #ff6a2b;
   --warn: #f2a93b;
-  --stroke-w: 5px;
+
+  /* Element accents */
+  --el-fire: #ff6a2b;
+  --el-lightning: #7cc4ff;
+  --el-ice: #8be9fd;
+  --el-wind: #c6f68d;
+  --el-water: #4f8cff;
+  --el-aura: #c084fc;
+  --el-scifi: #2dd4bf;
+  --el-fantasy: #f472b6;
+
+  /* Geometry */
   --radius: 14px;
+  --radius-sm: 9px;
+  --stroke-w: 5px;
+
+  /* Typography */
   --font-display: 'Bricolage Grotesque', sans-serif;
-  --font-body: 'Hanken Grotesk', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-body: 'Hanken Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 .presenter {
@@ -43,9 +77,7 @@ html, body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

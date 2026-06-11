@@ -7,8 +7,8 @@ import {
   rotateBy,
   scaleToSquare,
   translateToOrigin,
-} from '../strokeUtils';
-import type { Point } from '../strokeUtils';
+} from '../stroke';
+import type { Point } from '../stroke';
 
 const square4: Point[] = [
   { x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 },

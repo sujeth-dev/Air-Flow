@@ -11,3 +11,14 @@ createRoot(root).render(
     <App />
   </StrictMode>
 )
+
+// Register the service worker for offline shell + asset caching.
+// We register after window load so it doesn't compete with first paint.
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      // eslint-disable-next-line no-console
+      console.warn('SW registration failed:', err)
+    })
+  })
+}

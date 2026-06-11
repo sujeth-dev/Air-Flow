@@ -1,5 +1,5 @@
-import type { FSMState } from '../lib/gestureFSM';
-import type { TrackingStatus } from '../hooks/useHandTracking';
+import type { FSMState } from '../engine/gestureFSM';
+import type { TrackingStatus } from '../tracking/useHandTracking';
 
 interface Props {
   fps: number;
